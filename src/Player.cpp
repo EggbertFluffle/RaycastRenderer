@@ -58,9 +58,6 @@ void Player::RayCast(std::vector<int> map, const float* scl, const int* mapWidth
 		int mx = (int) ((position.x + hx) / *scl);
 		int my = (int) ((position.y + hy) / *scl);
 
-		mvaddstr(13 , *mapWidth * *scl + *scl, std::to_string(mx).c_str());
-		mvaddstr(15 , *mapWidth * *scl + *scl, std::to_string(my).c_str());
-
 		int mapIndex = (my * *mapWidth) + mx;
 		if(mapIndex < (*mapHeight * *mapWidth)) {
 			hit = map[mapIndex];

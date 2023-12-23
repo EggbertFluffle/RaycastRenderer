@@ -1,3 +1,6 @@
+#include <string>
+#include <vector>
+#include <ncurses.h>
 #include "Graphics.h"
 
 void swap(int& a, int& b) {
@@ -59,7 +62,7 @@ void drawLine(int x1, int y1, int x2, int y2, char stroke) {
 }
 
 void drawLine(int x1, int y1, int x2, int y2, char stroke, std::vector<std::string>* printStack) {
-	if(x1 > x2 || y1 > y2) {
+	if(x1 > x2) {
 		swapVec(x1, y1, x2, y2);
 	}
 
@@ -85,6 +88,16 @@ void drawLine(int x1, int y1, int x2, int y2, char stroke, std::vector<std::stri
 			mvaddch(y, rx, stroke);
 		}
 	}
+
+	printStack->push_back(std::string("slope: ") + std::to_string(m));
+	printStack->push_back(std::string("dx: ") + std::to_string(dx));
+	printStack->push_back(std::string("dy: ") + std::to_string(dy));
+	printStack->push_back(std::string("b: ") + std::to_string(b));
+
+	mvaddch(y1, x1, 'X');
+	mvaddch(y2, x2, 'X');
+	mvaddstr(y1 + 2, x1 + 2, (std::to_string(x1) + std::string(", ") + std::to_string(y1)).c_str());
+	mvaddstr(y2 + 2, x2 + 2, (std::to_string(x2) + std::string(", ") + std::to_string(y2)).c_str());
 }
 
 void fillRect(int x1, int y1, int x2, int y2, char stroke, char fill) {

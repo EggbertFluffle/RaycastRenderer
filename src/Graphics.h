@@ -10,4 +10,3 @@ int fixStretch(int& y);
 bool validPos(int& x, int& y, int& w, int& h);
 void fillRect(int x1, int y1, int x2, int y2, char stroke, char fill);
 void drawLine(int x1, int y1, int x2, int y2, char stroke);
-void drawLine(int x1, int y1, int x2, int y2, char stroke, std::vector<std::string>* printStack);

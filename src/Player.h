@@ -13,5 +13,5 @@ public:
 	void HandleInput(char c);
 	void WorldMove(float _x, float _y);
 	void LocalMove(float _x, float _y);
-	void RayCast(std::vector<int> map, const float* scl, const int* mapWidth, const int* mapHeight, float& _x, float& _y, float& dist);
+	void RayCast(std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float& _x, float& _y, float& dist, std::vector<std::string>* printStack);
 };

@@ -40,34 +40,66 @@ void Player::HandleInput(char c) {
 	}
 }
 
-void Player::RayCast(std::vector<int> map, const float* scl, const int* mapWidth, const int* mapHeight, float& _x, float& _y, float& dist) {
+void Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float& _x, float& _y, float& dist, std::vector<std::string>* printStack) {
+	// Unchanged
 	float m = std::tan(angle);
-	float dx = (angle < PI * 0.5 || angle > PI * 1.5) ? 
+	int renderDistance = 6;
+	
+	float hdx = (angle < PI * 0.5 || angle > PI * 1.5) ? 
 		*scl - std::fmod(position.x, *scl) :
 		-std::fmod(position.x, *scl);
-	float dy = m * dx;
-
-	float hx = dx;
-	float hy = dy;
-
-	int hit = 0;
-	for(int i = 0; i < 6 && hit == 0; i++) {
-		hx += (dx < 0 ? -*scl : *scl);
-		hy += m * (dx < 0 ? -*scl : *scl);
+	float hdy = m * hdx;
+	float hx = hdx;
+	float hy = hdy;
+	int horizHit = 0;
+	for(int i = 0; i < renderDistance && horizHit == 0; i++) {
+		float inc = (hdx < 0 ? -*scl : *scl);
+		hx = hdx + i * inc;
+		hy = hdy + i * (m * inc);
 
 		int mx = (int) ((position.x + hx) / *scl);
-		int my = (int) ((position.y + hy) / *scl);
+		int my = (int) ((position.y - hy) / *scl);
 
-		int mapIndex = (my * *mapWidth) + mx;
-		if(mapIndex < (*mapHeight * *mapWidth)) {
-			hit = map[mapIndex];
+		int mapIndex = (my * *mapWidth) + (hdx < 0 ? mx - 1 : mx);
+		if(mapIndex < map->size()) {
+			horizHit = map->at(mapIndex);
 		} else {
-			hit = -1;
+			horizHit = -1;
 		}
 	}
 
-	_x = position.x + hx;
-	_y = position.y - hy;
+	float vdy = (angle > PI) ? 
+		*scl - std::fmod(position.y, *scl) :
+		-std::fmod(position.y, *scl);
+	float vdx = vdy / m;
+	float vx, vy;
+	int vertHit = 0;
+	for(int i = 0; i < renderDistance && vertHit == 0; i++) {
+		float inc = (vdy < 0 ? -*scl : *scl);
+
+		vy = vdy + i * inc;
+		vx = vdx + i * (inc / m);
+
+		int mx = (int) ((position.x - vx) / *scl);
+		int my = (int) ((position.y + vy) / *scl);
+
+		int mapIndex = ((vdy > 0 ? my : my - 1) * *mapWidth) + mx;
+		if(mapIndex < map->size()) {
+			vertHit = map->at(mapIndex);
+		} else {
+			vertHit = -1;
+		}
+	}
+
 	float horizDistance = std::sqrt(std::pow(hx, 2) + std::pow(hy, 2));
-	dist = horizDistance;
+	float vertDistance = std::sqrt(std::pow(vx, 2) + std::pow(vy, 2));
+	if(horizDistance < vertDistance) {
+		_x = position.x + hx;
+		_y = position.y - hy;
+		dist = horizDistance;
+	} else {
+		_x = position.x - vx;
+		_y = position.y + vy;
+		dist = vertDistance;
+	}
 }

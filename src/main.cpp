@@ -57,18 +57,11 @@ int main () {
 	Player player((mapWidth * scl) / 2, (mapHeight * scl) / 2, 0);
 	bool quit = false;
 
-	egg::vec2i mpos(52, 16);
-
 	while(!quit) {
 		int c = wgetch(stdscr);
 
-		if(c == KEY_MOUSE) {
-			MEVENT mevent;
-			if(getmouse(&mevent) == OK) {
-				mpos.x = mevent.x;
-				mpos.y = mevent.y;
-			}
-		}
+		// Hold all the values to be printed for "debugging" i wanna kms
+		std::vector<std::string> printStack;
 
 		switch(c) {
 			case 'Q':
@@ -92,31 +85,25 @@ int main () {
 		erase();
 
 		// Draw all the walls
-		// for(egg::vec2i wall : walls) {
-		// 	fillRect(wall.x * scl, wall.y * scl, wall.x * scl + scl, wall.y * scl + scl, '#', '.');
-		// }
+		for(egg::vec2i wall : walls) {
+			fillRect(wall.x * scl, wall.y * scl, wall.x * scl + scl, wall.y * scl + scl, '#', '.');
+		}
 
-		// Hold all the values to be printed for "debugging" i wanna kms
-		std::vector<std::string> printStack;
+		// Debug coordinates
+		for(egg::vec2i wall : walls) {
+			mvaddstr(wall.y * scl + 1, wall.x * scl + 1, (std::to_string(wall.x) + std::string(", ") + std::to_string(wall.y)).c_str());
+		}
 
 		// nx = final x of ray, same with y, and dist is distance of the ray
 		float nx, ny, dist;
-		// Cast the ray
-		player.RayCast(map, &scl, &mapWidth, &mapHeight, nx, ny, dist);
-
-		// drawLine(player.position.x, player.position.y, nx, ny, '@');
-
+		player.RayCast(&map, &scl, &mapWidth, &mapHeight, nx, ny, dist, &printStack);
+		drawLine(player.position.x, player.position.y, nx, ny, '@');
 		mvaddch(player.position.y, player.position.x, 'P');
 
-		// drawLine(mapWidth * scl / 2, mapHeight * scl / 2, mpos.x, mpos.y, '+');
-		// printStack.push_back(std::string("mouse x: ") + std::to_string(mpos.x));
-		// printStack.push_back(std::string("mouse y: ") + std::to_string(mpos.y));
-		drawLine(mapWidth * scl / 2, mapHeight * scl / 2, mpos.x, mpos.y, '+', &printStack);
-
-		// printStack.push_back(std::string("angle: ") + std::to_string(player.angle));
-		// printStack.push_back(std::string("Ray X: ") + std::to_string(nx));
-		// printStack.push_back(std::string("Ray Y: ") + std::to_string(ny));
-		// printStack.push_back(std::string("Ray dist: ") + std::to_string(dist));
+		printStack.push_back(std::string("angle: ") + std::to_string(player.angle));
+		printStack.push_back(std::string("nx: ") + std::to_string(nx));
+		printStack.push_back(std::string("ny: ") + std::to_string(ny));
+		printStack.push_back(std::string("Ray dist: ") + std::to_string(dist));
 
 		PrintStack(printStack, mapWidth * scl + scl, 1);
 

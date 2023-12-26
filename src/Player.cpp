@@ -1,16 +1,21 @@
 #include <cmath>
 #include <ncurses.h>
-#include <string>
 #include <vector>
+
 #include "./Eggmath.h"
 #include "./Player.h"
+#include "./Eggbug.h"
 
 #define PI 3.1415926
+
+float lerp(float a, float b, float t);
 
 Player::Player(float _x, float _y, float _a):
 		position(_x, _y),
 		angle(_a),
-		speed(0.5) {};
+		speed(0.5),
+		fov(PI * 0.25)
+{};
 
 void Player::WorldMove(float _x, float _y) {
 	position.x += _x;
@@ -40,12 +45,14 @@ void Player::HandleInput(char c) {
 	}
 }
 
-void Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float& _x, float& _y, float& dist, std::vector<std::string>* printStack) {
-	// Unchanged
-	float m = std::tan(angle);
+float Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float angleDiff) {
+	// Constants between horizontal and vertical
+	float rayAngle = angle + angleDiff;
+	float m = -std::tan(rayAngle);
 	int renderDistance = 6;
 	
-	float hdx = (angle < PI * 0.5 || angle > PI * 1.5) ? 
+	// Horizontal line checks
+	float hdx = (rayAngle < PI * 0.5 || rayAngle > PI * 1.5) ? 
 		*scl - std::fmod(position.x, *scl) :
 		-std::fmod(position.x, *scl);
 	float hdy = m * hdx;
@@ -58,7 +65,7 @@ void Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWidt
 		hy = hdy + i * (m * inc);
 
 		int mx = (int) ((position.x + hx) / *scl);
-		int my = (int) ((position.y - hy) / *scl);
+		int my = (int) ((position.y + hy) / *scl);
 
 		int mapIndex = (my * *mapWidth) + (hdx < 0 ? mx - 1 : mx);
 		if(mapIndex < map->size()) {
@@ -68,19 +75,19 @@ void Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWidt
 		}
 	}
 
-	float vdy = (angle > PI) ? 
+	// Vertical line checks
+	float vdy = (rayAngle > PI) ? 
 		*scl - std::fmod(position.y, *scl) :
 		-std::fmod(position.y, *scl);
 	float vdx = vdy / m;
 	float vx, vy;
-	int vertHit = 0;
-	for(int i = 0; i < renderDistance && vertHit == 0; i++) {
+	int vertHit = 0; for(int i = 0; i < renderDistance && vertHit == 0; i++) {
 		float inc = (vdy < 0 ? -*scl : *scl);
 
 		vy = vdy + i * inc;
 		vx = vdx + i * (inc / m);
 
-		int mx = (int) ((position.x - vx) / *scl);
+		int mx = (int) ((position.x + vx) / *scl);
 		int my = (int) ((position.y + vy) / *scl);
 
 		int mapIndex = ((vdy > 0 ? my : my - 1) * *mapWidth) + mx;
@@ -91,15 +98,25 @@ void Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWidt
 		}
 	}
 
+	// Pick shortest distance
 	float horizDistance = std::sqrt(std::pow(hx, 2) + std::pow(hy, 2));
 	float vertDistance = std::sqrt(std::pow(vx, 2) + std::pow(vy, 2));
 	if(horizDistance < vertDistance) {
-		_x = position.x + hx;
-		_y = position.y - hy;
-		dist = horizDistance;
+		eb::PushLine(position.x, position.y, position.x + hx, position.y + hy, 'H');
+		return horizDistance;
 	} else {
-		_x = position.x - vx;
-		_y = position.y + vy;
-		dist = vertDistance;
+		eb::PushLine(position.x, position.y, position.x + vx, position.y + vy, 'V');
+		return vertDistance;
 	}
 }
+
+void Player::TakePerspective(std::vector<float>* distances,
+		std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight)
+{
+	for(int i = 0; i < distances->size(); i++) {
+		distances->at(i) = RayCast(
+				map, scl, mapWidth, mapHeight,
+				lerp(PI * 0.25, PI * -0.25, (float) i / (float) distances->size()));
+	}
+}
+

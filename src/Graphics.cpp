@@ -1,5 +1,3 @@
-#include <string>
-#include <vector>
 #include <ncurses.h>
 #include "Graphics.h"
 
@@ -33,6 +31,40 @@ bool validPos(int& x, int& y, int& w, int& h) {
 }
 
 void drawLine(int x1, int y1, int x2, int y2, char stroke) {
+	float dx = x2 - x1;
+	float dy = y2 - y1;
+	float m = dy / dx;
+	float b = -m * x1 + y1;
+
+	if(dx == 0) {
+		if(y2 < y1) {
+			swapVec(x1, y1, x2, y2);
+		}
+		for(int y = y1; y < y2 + 1; y += 1) {
+			mvaddch(y, x1, stroke);
+		}	
+	}
+
+	if(m <= 1 && m >= -1) {
+		if(x2 < x1) {
+			swapVec(x1, y1, x2, y2);
+		}
+		for(int x = x1; x < x2; x += 1) {
+			int ry = (int) (m * x + b) + 0.5;
+			mvaddch(ry, x, stroke);
+		}
+	} else {
+		if(y2 < y1) {
+			swapVec(x1, y1, x2, y2);
+		}
+		for(int y = y1; y < y2; y += 1) {
+			int rx = (int) ((y - b) / m) + 0.5;
+			mvaddch(y, rx, stroke);
+		}
+	}
+}
+
+void drawLine(int x1, int y1, int x2, int y2, char32_t stroke) {
 	float dx = x2 - x1;
 	float dy = y2 - y1;
 	float m = dy / dx;

@@ -1,2 +1,2 @@
-main: ./src/main.cpp ./src/Graphics.cpp ./src/Player.cpp
-	g++ ./src/main.cpp ./src/Graphics.cpp ./src/Player.cpp -o main -lncurses -g
+main: ./src/main.cpp ./src/Graphics.cpp ./src/Player.cpp ./src/Eggbug.cpp
+	g++ ./src/main.cpp ./src/Graphics.cpp ./src/Player.cpp ./src/Eggbug.cpp -o main -lncursesw -g

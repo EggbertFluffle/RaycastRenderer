@@ -1,5 +1,6 @@
 #include <cmath>
 #include <ncurses.h>
+#include <random>
 #include <vector>
 
 #include "./Eggmath.h"
@@ -14,7 +15,7 @@ Player::Player(float _x, float _y, float _a):
 		position(_x, _y),
 		angle(_a),
 		speed(0.5),
-		fov(PI * 0.15)
+		fov(PI * 0.2)
 {};
 
 void Player::WorldMove(float _x, float _y) {
@@ -45,8 +46,7 @@ void Player::HandleInput(char c) {
 	}
 }
 
-float Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float angleDiff, int index) {
-	eb::SeperateStack();
+float Player::RayCast(int&hit, std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float angleDiff) {
 	// Constants between horizontal and vertical
 	float rayAngle = (angle + angleDiff) < 0 ? 2 * PI + (angle + angleDiff) : std::fmod(angle + angleDiff, 2 * PI);
 	float m = -std::tan(rayAngle);
@@ -103,20 +103,25 @@ float Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWid
 	float horizDistance = std::sqrt(std::pow(hx, 2) + std::pow(hy, 2));
 	float vertDistance = std::sqrt(std::pow(vx, 2) + std::pow(vy, 2));
 	if(horizDistance < vertDistance) {
-		return horizDistance;
+		eb::PushLine(position.x, position.y, position.x + hx, position.y + hy, 'H');
+		hit = horizHit;
+		return horizDistance * std::cos(angleDiff);
 	} else {
-		return vertDistance;
+		eb::PushLine(position.x, position.y, position.x + vx, position.y + vy, 'V');
+		hit = vertHit;
+		return vertDistance * std::cos(angleDiff);
 	}
+	// return std::min(horizDistance, vertDistance) * std::cos(angleDiff);
 }
 
-void Player::TakePerspective(std::vector<float>* distances,
+void Player::TakePerspective(std::vector<float>* distances, std::vector<int>* hits,
 		std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight)
 {
 	for(int i = 0; i < distances->size(); i++) {
 		distances->at(i) = RayCast(
+				hits->at(i),
 				map, scl, mapWidth, mapHeight,
-				lerp(PI * 0.25, PI * -0.25, (float) i / (float) distances->size()),
-				i);
+				lerp(PI * 0.25, PI * -0.25, (float) i / (float) distances->size()));
 	}
 }
 

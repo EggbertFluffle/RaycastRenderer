@@ -25,41 +25,42 @@ int main () {
 
 
 	// Map information
-	const int mapWidth = 10, mapHeight = 10;
+	const int mapWidth = 6, mapHeight = 6;
 	const float scl = 8;
-	const char shading[] = "@#WN$?a=-. ";
-	std::vector<int> map = {
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 1, 1, 1, 1, 1, 0, 0, 1,
-		1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1, 1, 1,
-		1, 0, 0, 0, 0, 0, 0, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-	};
+	const std::vector<char> shading = {'@', '#', 'W', 'N', '$', '?', 'a', '=', '-', '.'};
 	// std::vector<int> map = {
-	// 	1, 1, 1, 1, 1, 1,
-	// 	1, 0, 0, 0, 0, 1,
-	// 	1, 0, 0, 0, 0, 1,
-	// 	1, 0, 0, 0, 0, 1,
-	// 	1, 0, 0, 0, 0, 1,
-	// 	1, 1, 1, 1, 1, 1
+	// 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	// 	1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	// 	1, 0, 1, 1, 1, 1, 1, 0, 0, 1,
+	// 	1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
+	// 	1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
+	// 	1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
+	// 	1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
+	// 	1, 0, 0, 0, 0, 0, 0, 1, 1, 1,
+	// 	1, 0, 0, 0, 0, 0, 0, 1, 1, 1,
+	// 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 	// };
+	std::vector<int> map = {
+		1, 2, 1, 2, 1, 2,
+		2, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 2,
+		2, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 2,
+		2, 1, 2, 1, 2, 1
+	};
 
 	// In order to easily render the walls
 	std::vector<egg::vec2i> walls;
 	for(int y = 0; y < mapHeight; y++) {
 		for(int x = 0; x < mapWidth; x++) {
-			if(map[(y * mapWidth) + x] == 1) walls.push_back(egg::vec2i(x, y));
+			if(map[(y * mapWidth) + x] != 0) walls.push_back(egg::vec2i(x, y));
 		}
 	}
 
 	Player player((mapWidth * scl) / 2 + 0.001, (mapHeight * scl) / 2 + 0.001, 0);
 	bool quit = false;
 	bool perspective = false;
+	bool textured = true;
 
 	while(!quit) {
 		int c = wgetch(stdscr);
@@ -94,16 +95,23 @@ int main () {
 
 		int lines = width;
 		std::vector<float> distances(lines);
-		player.TakePerspective(&distances, &map, &scl, &mapWidth, &mapHeight);
+		std::vector<int> hits(lines);
+		player.TakePerspective(&distances, &hits, &map, &scl, &mapWidth, &mapHeight);
 		// player.RayCast(&map, &scl, &mapWidth, &mapHeight, 0);
 
 		if(perspective) {
 			for(int i = 0; i < distances.size(); i++) {
-				float fc = lerp((float) (height / 2.0), 0.0, (float) distances.at(i) < 30 ? distances.at(i) / 30 : 1);
-				int c = (int) lerp((float) (sizeof(shading)/sizeof(char) - 1), 0, fc);
-				drawLine(i, height / 2.0 - fc, i, height / 2.0 + fc, shading[c]);
+				float fc = lerp((float) (height / 2.0f), 0.0f, (float) distances.at(i) < 30 ? distances.at(i) / 30 : 1);
+				if(textured) {
+					char c = (hits.at(i) == 1 ? '-' : '|');
+					drawLine(i, height / 2.0f - fc, i, height / 2.0f + fc, c);
+				} else {
+					int c = (int) lerp(((float) shading.size()) - 1.0f, 0.0f, fc / ((float) height / 2));
+					drawLine(i, height / 2.0f - fc, i, height / 2.0f + fc, shading[c]);
+				}
 			}
 
+			// Draw the minimap
 			fillRect(0, 0, mapWidth, mapHeight, ' ', ' ');
 			for(egg::vec2i wall : walls) {
 				mvaddch(wall.y, wall.x, '#');

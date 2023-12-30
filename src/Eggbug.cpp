@@ -11,6 +11,10 @@ namespace eb {
 		eb::printStack.push_back(std::string(key) + std::string(": ") + val);
 	}
 
+	void SeperateStack() {
+		eb::printStack.push_back(std::string("-------------------------------"));
+	}
+
 	void PrintStack(int x, int y) {
 		for(int i = 0; i < eb::printStack.size(); i++) {
 			std::string* str = &eb::printStack[i];

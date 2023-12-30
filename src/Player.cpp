@@ -14,7 +14,7 @@ Player::Player(float _x, float _y, float _a):
 		position(_x, _y),
 		angle(_a),
 		speed(0.5),
-		fov(PI * 0.25)
+		fov(PI * 0.15)
 {};
 
 void Player::WorldMove(float _x, float _y) {
@@ -40,16 +40,17 @@ void Player::HandleInput(char c) {
 			break;
 		case 'k':
 			angle -= 0.1;
-			if (angle < 0) angle = 2 * PI  + angle;
+			if (angle < 0) angle = 2 * PI + angle;
 			break;
 	}
 }
 
-float Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float angleDiff) {
+float Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float angleDiff, int index) {
+	eb::SeperateStack();
 	// Constants between horizontal and vertical
-	float rayAngle = angle + angleDiff;
+	float rayAngle = (angle + angleDiff) < 0 ? 2 * PI + (angle + angleDiff) : std::fmod(angle + angleDiff, 2 * PI);
 	float m = -std::tan(rayAngle);
-	int renderDistance = 6;
+	int renderDistance = 14;
 	
 	// Horizontal line checks
 	float hdx = (rayAngle < PI * 0.5 || rayAngle > PI * 1.5) ? 
@@ -102,10 +103,8 @@ float Player::RayCast(std::vector<int>* map, const float* scl, const int* mapWid
 	float horizDistance = std::sqrt(std::pow(hx, 2) + std::pow(hy, 2));
 	float vertDistance = std::sqrt(std::pow(vx, 2) + std::pow(vy, 2));
 	if(horizDistance < vertDistance) {
-		eb::PushLine(position.x, position.y, position.x + hx, position.y + hy, 'H');
 		return horizDistance;
 	} else {
-		eb::PushLine(position.x, position.y, position.x + vx, position.y + vy, 'V');
 		return vertDistance;
 	}
 }
@@ -116,7 +115,8 @@ void Player::TakePerspective(std::vector<float>* distances,
 	for(int i = 0; i < distances->size(); i++) {
 		distances->at(i) = RayCast(
 				map, scl, mapWidth, mapHeight,
-				lerp(PI * 0.25, PI * -0.25, (float) i / (float) distances->size()));
+				lerp(PI * 0.25, PI * -0.25, (float) i / (float) distances->size()),
+				i);
 	}
 }
 

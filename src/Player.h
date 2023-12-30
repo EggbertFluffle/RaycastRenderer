@@ -15,7 +15,7 @@ public:
 	void HandleInput(char c);
 	void WorldMove(float _x, float _y);
 	void LocalMove(float _x, float _y);
-	float RayCast(std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float angleDiff);
+	float RayCast(std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float angleDiff, int index);
 	void TakePerspective(
 			std::vector<float>* distances,
 			std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight);

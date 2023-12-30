@@ -2,7 +2,6 @@
 #include <vector>
 #include <string>
 #include <ncurses.h>
-#include <cmath>
 
 #include "./Graphics.h"
 #include "./Eggmath.h"
@@ -28,7 +27,7 @@ int main () {
 	// Map information
 	const int mapWidth = 10, mapHeight = 10;
 	const float scl = 8;
-	const char shading[] = "@@##WW$$?!a:=-,. ";
+	const char shading[] = "@#WN$?a=-. ";
 	std::vector<int> map = {
 		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -58,7 +57,7 @@ int main () {
 		}
 	}
 
-	Player player((mapWidth * scl) / 2, (mapHeight * scl) / 2, 0);
+	Player player((mapWidth * scl) / 2 + 0.001, (mapHeight * scl) / 2 + 0.001, 0);
 	bool quit = false;
 	bool perspective = false;
 
@@ -89,6 +88,10 @@ int main () {
 		// Clean previous pixel buffer
 		erase();
 
+		eb::PushStack("player x", std::to_string(player.position.x));
+		eb::PushStack("player y", std::to_string(player.position.y));
+		eb::PushStack("angle", std::to_string(player.angle));
+
 		int lines = width;
 		std::vector<float> distances(lines);
 		player.TakePerspective(&distances, &map, &scl, &mapWidth, &mapHeight);
@@ -96,10 +99,15 @@ int main () {
 
 		if(perspective) {
 			for(int i = 0; i < distances.size(); i++) {
-				float fc = lerp((float) height / 2.0, 0.0, (float) distances.at(i) < 30 ? distances.at(i) / 30 : 0);
-				char c = shading[(int) lerp(sizeof(shading)/sizeof(char), 0, fc / 30.0)];
-				eb::PushStack("Letter", std::to_string(c));
-				drawLine(i, height / 2.0 - fc, i, height / 2.0 + fc, c);
+				float fc = lerp((float) (height / 2.0), 0.0, (float) distances.at(i) < 30 ? distances.at(i) / 30 : 1);
+				int c = (int) lerp((float) (sizeof(shading)/sizeof(char) - 1), 0, fc);
+				drawLine(i, height / 2.0 - fc, i, height / 2.0 + fc, shading[c]);
+			}
+
+			fillRect(0, 0, mapWidth, mapHeight, ' ', ' ');
+			for(egg::vec2i wall : walls) {
+				mvaddch(wall.y, wall.x, '#');
+				mvaddch((int) (player.position.y / scl), (int) (player.position.x / scl), 'P');
 			}
 		} else {
 			// Draw all the walls
@@ -107,8 +115,6 @@ int main () {
 				fillRect(wall.x * scl, wall.y * scl, wall.x * scl + scl, wall.y * scl + scl, '#', '.');
 				mvaddstr(wall.y * scl + 1, wall.x * scl + 1, (std::to_string(wall.x) + std::string(", ") + std::to_string(wall.y)).c_str());
 			}
-
-			eb::PushStack("angle", std::to_string(player.angle));
 
 			eb::PrintStack(mapWidth * scl + scl, 1);
 			eb::PrintLines();

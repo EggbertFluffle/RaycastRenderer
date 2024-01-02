@@ -1,6 +1,6 @@
 #include <cmath>
 #include <ncurses.h>
-#include <random>
+#include <string>
 #include <vector>
 
 #include "./Eggmath.h"
@@ -15,7 +15,10 @@ Player::Player(float _x, float _y, float _a):
 		position(_x, _y),
 		angle(_a),
 		speed(0.5),
-		fov(PI * 0.2)
+		fov(PI * 0.2),
+		mouseActive(false),
+		mouseSensativity(0.08),
+		prevMousePos(0)
 {};
 
 void Player::WorldMove(float _x, float _y) {
@@ -24,7 +27,10 @@ void Player::WorldMove(float _x, float _y) {
 }
 
 void Player::LocalMove(float _x, float _y) {
-	WorldMove(std::cos(angle) * _y, -std::sin(angle) * _y);
+	WorldMove(
+		(-std::cos((PI / 2) + angle) * _x) + (std::cos(angle) * _y),
+		(std::sin((PI / 2) + angle) * _x) + (-std::sin(angle) * _y)
+	);
 }
 
 void Player::HandleInput(char c) {
@@ -35,6 +41,12 @@ void Player::HandleInput(char c) {
 		case 's':
 			LocalMove(0, -speed);
 			break;
+		case 'a':
+			LocalMove(-speed, 0);
+			break;
+		case 'd':
+			LocalMove(speed, 0);
+			break;
 		case 'j':
 			angle += 0.1;
 			if(angle > 2 * PI) angle = std::fmod(angle, (2 * PI));
@@ -42,6 +54,18 @@ void Player::HandleInput(char c) {
 		case 'k':
 			angle -= 0.1;
 			if (angle < 0) angle = 2 * PI + angle;
+			break;
+		case 'm':
+			mouseActive = !mouseActive;
+			break;
+		case 'M': 
+			MEVENT e;
+			if (getmouse(&e) == OK) {
+				eb::PushStack("Mouse X", std::to_string(e.x));
+				eb::PushStack("Mouse Y", std::to_string(e.y));
+				if(mouseActive) angle += mouseSensativity * (prevMousePos - e.x);
+				prevMousePos = e.x;
+			}
 			break;
 	}
 }

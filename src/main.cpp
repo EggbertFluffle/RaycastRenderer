@@ -2,11 +2,13 @@
 #include <vector>
 #include <string>
 #include <ncurses.h>
+#include <iostream>
 
 #include "./Graphics.h"
 #include "./Eggmath.h"
 #include "./Player.h"
 #include "./Eggbug.h"
+#include "./Textures.h"
 
 #define PI 3.1415926
 
@@ -20,34 +22,47 @@ int main () {
 	initscr();
 	getmaxyx(stdscr, height, width);
 	keypad(stdscr, TRUE);
-	// mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-	// mouseinterval(0);
+	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+	std::cout << "\033[?1003h\n";
+	mouseinterval(0);
 
 
 	// Map information
 	const int mapWidth = 6, mapHeight = 6;
 	const float scl = 8;
-	const std::vector<char> shading = {'@', '#', 'W', 'N', '$', '?', 'a', '=', '-', '.'};
+	const std::vector<char> shading = {'@', '#', 'W', '$', '?', 'a', '(', '>', '=', '-', '.'};
 	// std::vector<int> map = {
-	// 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	// 	1, 2, 1, 2, 1, 2, 1, 2, 1, 2,
 	// 	1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-	// 	1, 0, 1, 1, 1, 1, 1, 0, 0, 1,
+	// 	2, 0, 2, 1, 2, 1, 2, 0, 0, 2,
 	// 	1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
+	// 	2, 0, 2, 0, 0, 0, 0, 0, 0, 2,
 	// 	1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
-	// 	1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
-	// 	1, 0, 1, 0, 0, 0, 0, 0, 0, 1,
-	// 	1, 0, 0, 0, 0, 0, 0, 1, 1, 1,
-	// 	1, 0, 0, 0, 0, 0, 0, 1, 1, 1,
-	// 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+	// 	2, 0, 2, 0, 0, 0, 0, 0, 0, 2,
+	// 	1, 0, 0, 0, 0, 0, 0, 2, 1, 1,
+	// 	2, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+	// 	1, 1, 2, 1, 2, 1, 2, 1, 0, 0
 	// };
 	std::vector<int> map = {
 		1, 2, 1, 2, 1, 2,
 		2, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 2,
+		1, 0, 3, 0, 0, 2,
 		2, 0, 0, 0, 0, 1,
 		1, 0, 0, 0, 0, 2,
 		2, 1, 2, 1, 2, 1
 	};
+
+	std::vector<texture> textures;
+	textures.push_back(texture());
+	textures.push_back(texture(8, 
+				"########"
+				"#      #"
+				"# #### #"
+				"# #  # #"
+				"# #  # #"
+				"# #### #"
+				"#      #"
+				"########"));
 
 	// In order to easily render the walls
 	std::vector<egg::vec2i> walls;
@@ -75,23 +90,38 @@ int main () {
 			case 's':
 				player.HandleInput(c);
 				break;
+			case 'a':
+				player.HandleInput(c);
+				break;
+			case 'd':
+				player.HandleInput(c);
+				break;
 			case 'j':
 				player.HandleInput(c);
 				break;
 			case 'k':
 				player.HandleInput(c);
 				break;
+			case 'm':
+				player.HandleInput(c);
+				break;
+			case KEY_MOUSE:
+				player.HandleInput('M');
+				break;
 			case 'v':
 				perspective = !perspective; 
+				break;
+			case 't':
+				textured = !textured;
 				break;
 		}
 
 		// Clean previous pixel buffer
 		erase();
 
-		eb::PushStack("player x", std::to_string(player.position.x));
-		eb::PushStack("player y", std::to_string(player.position.y));
-		eb::PushStack("angle", std::to_string(player.angle));
+		// eb::PushStack("player x", std::to_string(player.position.x));
+		// eb::PushStack("player y", std::to_string(player.position.y));
+		// eb::PushStack("angle", std::to_string(player.angle));
 
 		int lines = width;
 		std::vector<float> distances(lines);

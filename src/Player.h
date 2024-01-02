@@ -10,6 +10,9 @@ public:
 	float speed;
 	float angle;
 	float fov;
+	float mouseSensativity;
+	int prevMousePos;
+	bool mouseActive;
 	
 	Player(float _x, float _y, float _a);
 	void HandleInput(char c);

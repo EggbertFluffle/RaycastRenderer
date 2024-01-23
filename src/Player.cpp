@@ -18,7 +18,8 @@ Player::Player(float _x, float _y, float _a):
 		fov(PI * 0.2),
 		mouseActive(false),
 		mouseSensativity(0.08),
-		prevMousePos(0)
+		prevMousePos(0),
+		mouseDown(false)
 {};
 
 void Player::WorldMove(float _x, float _y) {
@@ -61,16 +62,22 @@ void Player::HandleInput(char c) {
 		case 'M': 
 			MEVENT e;
 			if (getmouse(&e) == OK) {
-				eb::PushStack("Mouse X", std::to_string(e.x));
-				eb::PushStack("Mouse Y", std::to_string(e.y));
-				if(mouseActive) angle += mouseSensativity * (prevMousePos - e.x);
-				prevMousePos = e.x;
+				// Check button 1 state
+				if(e.bstate & BUTTON1_PRESSED) { mouseDown = true; prevMousePos = e.x; }
+				if(e.bstate & BUTTON1_RELEASED) { mouseDown = false; }
+
+				if(mouseDown) {
+					if(mouseActive) angle += mouseSensativity * (prevMousePos - e.x);
+					if(angle > 2 * PI) angle = std::fmod(angle, (2 * PI));
+					if (angle < 0) angle = 2 * PI + angle;
+					prevMousePos = e.x;
+				}
 			}
 			break;
 	}
 }
 
-float Player::RayCast(int&hit, std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float angleDiff) {
+float Player::RayCast(int& hit, float& uTexCoord, std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight, float angleDiff) {
 	// Constants between horizontal and vertical
 	float rayAngle = (angle + angleDiff) < 0 ? 2 * PI + (angle + angleDiff) : std::fmod(angle + angleDiff, 2 * PI);
 	float m = -std::tan(rayAngle);
@@ -81,8 +88,7 @@ float Player::RayCast(int&hit, std::vector<int>* map, const float* scl, const in
 		*scl - std::fmod(position.x, *scl) :
 		-std::fmod(position.x, *scl);
 	float hdy = m * hdx;
-	float hx = hdx;
-	float hy = hdy;
+	float hx, hy;
 	int horizHit = 0;
 	for(int i = 0; i < renderDistance && horizHit == 0; i++) {
 		float inc = (hdx < 0 ? -*scl : *scl);
@@ -127,23 +133,22 @@ float Player::RayCast(int&hit, std::vector<int>* map, const float* scl, const in
 	float horizDistance = std::sqrt(std::pow(hx, 2) + std::pow(hy, 2));
 	float vertDistance = std::sqrt(std::pow(vx, 2) + std::pow(vy, 2));
 	if(horizDistance < vertDistance) {
-		eb::PushLine(position.x, position.y, position.x + hx, position.y + hy, 'H');
 		hit = horizHit;
+		uTexCoord = std::fmod(position.y + hy, *scl) / *scl;
 		return horizDistance * std::cos(angleDiff);
 	} else {
-		eb::PushLine(position.x, position.y, position.x + vx, position.y + vy, 'V');
 		hit = vertHit;
+		uTexCoord = std::fmod(position.x + vx, *scl) / *scl;
 		return vertDistance * std::cos(angleDiff);
 	}
-	// return std::min(horizDistance, vertDistance) * std::cos(angleDiff);
 }
 
-void Player::TakePerspective(std::vector<float>* distances, std::vector<int>* hits,
+void Player::TakePerspective(std::vector<float>* distances, std::vector<int>* hits, std::vector<float>* uTexCoords,
 		std::vector<int>* map, const float* scl, const int* mapWidth, const int* mapHeight)
 {
 	for(int i = 0; i < distances->size(); i++) {
 		distances->at(i) = RayCast(
-				hits->at(i),
+				hits->at(i), uTexCoords->at(i),
 				map, scl, mapWidth, mapHeight,
 				lerp(PI * 0.25, PI * -0.25, (float) i / (float) distances->size()));
 	}

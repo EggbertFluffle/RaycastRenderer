@@ -29,7 +29,7 @@ int main () {
 
 	// Map information
 	const int mapWidth = 6, mapHeight = 6;
-	const float scl = 8;
+	const float scl = 6;
 	const std::vector<char> shading = {'@', '#', 'W', '$', '?', 'a', '(', '>', '=', '-', '.'};
 	// std::vector<int> map = {
 	// 	1, 2, 1, 2, 1, 2, 1, 2, 1, 2,
@@ -56,13 +56,39 @@ int main () {
 	textures.push_back(texture());
 	textures.push_back(texture(8, 
 				"########"
-				"#      #"
-				"# #### #"
-				"# #  # #"
-				"# #  # #"
-				"# #### #"
-				"#      #"
+				"########"
+				"########"
+				"########"
+				"########"
+				"########"
+				"########"
 				"########"));
+	textures.push_back(texture(8, 
+				"########"
+				"########"
+				"# #    #"
+				"#  #   #"
+				"#   #  #"
+				"#    # #"
+				"########"
+				"########"));
+	textures.push_back(texture(16, 
+				"################"
+				"#              #"
+				"#              #"
+				"#       #      #"
+				"#       ###    #"
+				"#       ####   #"
+				"#       #####  #"
+				"# ############ #"
+				"# ############ #"
+				"#       #####  #"
+				"#       ####   #"
+				"#       ###    #"
+				"#       ##     #"
+				"#              #"
+				"#              #"
+				"################"));
 
 	// In order to easily render the walls
 	std::vector<egg::vec2i> walls;
@@ -75,7 +101,7 @@ int main () {
 	Player player((mapWidth * scl) / 2 + 0.001, (mapHeight * scl) / 2 + 0.001, 0);
 	bool quit = false;
 	bool perspective = false;
-	bool textured = true;
+	short textured = 0;
 
 	while(!quit) {
 		int c = wgetch(stdscr);
@@ -112,32 +138,33 @@ int main () {
 				perspective = !perspective; 
 				break;
 			case 't':
-				textured = !textured;
+				textured++;
+				textured %= 3;
 				break;
 		}
 
 		// Clean previous pixel buffer
 		erase();
 
-		// eb::PushStack("player x", std::to_string(player.position.x));
-		// eb::PushStack("player y", std::to_string(player.position.y));
-		// eb::PushStack("angle", std::to_string(player.angle));
-
 		int lines = width;
 		std::vector<float> distances(lines);
 		std::vector<int> hits(lines);
-		player.TakePerspective(&distances, &hits, &map, &scl, &mapWidth, &mapHeight);
-		// player.RayCast(&map, &scl, &mapWidth, &mapHeight, 0);
+		std::vector<float> uTexCoords(lines);
+		player.TakePerspective(&distances, &hits, &uTexCoords, &map, &scl, &mapWidth, &mapHeight);
 
 		if(perspective) {
+			// PERSPECTIVE VIEW
 			for(int i = 0; i < distances.size(); i++) {
-				float fc = lerp((float) (height / 2.0f), 0.0f, (float) distances.at(i) < 30 ? distances.at(i) / 30 : 1);
-				if(textured) {
+				// float fc = lerp((float) (height / 2.0f), 0.0f, (float) distances.at(i) < 30 ? distances.at(i) / 30 : 1);
+				int fromCenter = (height / float(distances.at(i))) * 1.5;
+				if(textured == 0) {
 					char c = (hits.at(i) == 1 ? '-' : '|');
-					drawLine(i, height / 2.0f - fc, i, height / 2.0f + fc, c);
-				} else {
-					int c = (int) lerp(((float) shading.size()) - 1.0f, 0.0f, fc / ((float) height / 2));
-					drawLine(i, height / 2.0f - fc, i, height / 2.0f + fc, shading[c]);
+					drawLine(i, height / 2.0f - fromCenter, i, height / 2.0f + fromCenter, c);
+				} else if(textured == 1) {
+					int c = (int) lerp(((float) shading.size()) - 1.0f, 0.0f, fromCenter / ((float) height / 2));
+					drawLine(i, height / 2.0f - fromCenter, i, height / 2.0f + fromCenter, shading[c]);
+				} else if(textured == 2) {
+					drawTexturedLine(i, uTexCoords.at(i), fromCenter, width, height, &textures.at(hits.at(i)));
 				}
 			}
 
@@ -148,6 +175,7 @@ int main () {
 				mvaddch((int) (player.position.y / scl), (int) (player.position.x / scl), 'P');
 			}
 		} else {
+			// MAP VIEW
 			// Draw all the walls
 			for(egg::vec2i wall : walls) {
 				fillRect(wall.x * scl, wall.y * scl, wall.x * scl + scl, wall.y * scl + scl, '#', '.');

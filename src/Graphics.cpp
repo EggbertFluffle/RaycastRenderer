@@ -1,5 +1,7 @@
 #include <ncurses.h>
+
 #include "Graphics.h"
+#include "Eggbug.h"
 
 void swap(int& a, int& b) {
 	int t = b;
@@ -95,6 +97,14 @@ void drawLine(int x1, int y1, int x2, int y2, char32_t stroke) {
 			int rx = (int) ((y - b) / m) + 0.5;
 			mvaddch(y, rx, stroke);
 		}
+	}
+}
+
+void drawTexturedLine(int& x, float& uf, int& fromCenter, int& width, int& height, texture* tex) {
+	int u = int(uf * float(tex->size));
+	for(int y = 0; y < 2 * fromCenter; y++) {
+		int v = int((float(y) / float(2 * fromCenter)) * tex->size);
+		mvaddch(int(height / 2) + y - fromCenter, x, tex->tex.at(v * tex->size + u));
 	}
 }
 
